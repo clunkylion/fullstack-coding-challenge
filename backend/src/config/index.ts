@@ -1,8 +1,7 @@
+require("dotenv").config();
 export default {
-  JWT_SECRET: process.env.JWT_SECRET || "somesecret",
+  JWT_SECRET: process.env["JWT_SECRET"] || "somesecret",
   DB: {
-    URI: process.env.MONGO_URI || "mongodb://localhost/legalboth-auth-db",
-    USER: process.env.MONGO_USER || "",
-    PASSWORD: process.env.MONGO_PASSWORD || "",
+    URI: process.env["MONGO_URI"] || "mongodb://localhost/legalboth-auth-db",
   },
 };
