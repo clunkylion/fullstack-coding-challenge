@@ -17,51 +17,65 @@ function createToken(user: IUser): string {
 export const signUp = async (
   req: Request,
   res: Response
-): Promise<Response> => {
+): Promise<Response | undefined> => {
   let { email, password, gender, name } = req.body;
   if (!email || !password || !gender || !name) {
-    return res.status(400).json({
+    return res.send({
+      error: true,
       message: "email, password, gender and name are required",
+      status: 400,
     });
   }
-  const user = await User.findOne({ email: email });
-  if (user) {
-    return res.status(400).json({
-      message: "User already exists",
+  try {
+    const user = await User.findOne({ email: email });
+    if (user) {
+      return res.send({
+        message: "User already exists",
+        error: true,
+        status: 403,
+      });
+    }
+    const newUser = new User(req.body);
+    await newUser.save();
+    return res.send({
+      message: "User created successfully",
+      newUser,
+      error: false,
+      status: 201,
     });
+  } catch (error) {
+    console.error(error);
   }
-  const newUser = new User(req.body);
-  await newUser.save();
-  return res.status(201).json({
-    message: "User created successfully",
-    newUser,
-  });
 };
 export const signIn = async (
   req: Request,
   res: Response
-): Promise<Response> => {
+): Promise<Response | undefined> => {
   let { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({
       message: "email and password are required",
     });
   }
-  const user = await User.findOne({ email: email });
-  if (!user) {
+  try {
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      return res.status(400).json({
+        message: "User does not exist",
+      });
+    }
+    const isMatch = await user.comparePassword(password);
+    if (isMatch) {
+      return res.status(200).json({
+        message: "User signed in successfully",
+        token: createToken(user),
+        user,
+      });
+    }
     return res.status(400).json({
-      message: "User does not exist",
+      message: "Invalid email or password",
     });
+  } catch (error) {
+    console.error(error);
   }
-  const isMatch = await user.comparePassword(password);
-  if (isMatch) {
-    return res.status(200).json({
-      message: "User signed in successfully",
-      token: createToken(user),
-      user,
-    });
-  }
-  return res.status(400).json({
-    message: "Invalid email or password",
-  });
 };
